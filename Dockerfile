@@ -3,11 +3,17 @@ FROM php:7.2-cli AS deployer
 ENV OSTICKET_VERSION=1.12
 RUN set -x \
     && apt-get update \
-    && apt-get install -y git-core \
+    && apt-get install -y git-core wget unzip \
     && git clone -b v${OSTICKET_VERSION} --depth 1 https://github.com/osTicket/osTicket.git \
     && cd osTicket \
     && php manage.php deploy -sv /data/upload \
     # www-data is uid:gid 82:82 in php:7.0-fpm-alpine
+    # rdb stuff
+    && wget http://www.software-mods.com/clients/downloads/Reports_8.2.4.zip \
+    && unzip Reports_8.2.4.zip -d /data/upload \
+    && mkdir -p /data/upload/scp/REPORTS && chmod +w /data/upload/scp/REPORTS \
+    && mkdir -p /data/upload404 && chmod +w /data/upload404 \
+    # end rdb stuff
     && chown -R 82:82 /data/upload \
     # Hide setup
     && mv /data/upload/setup /data/upload/setup_hidden \
@@ -48,6 +54,7 @@ RUN set -x && \
         g++ \
         make \
         pcre-dev && \
+    apk add --no-cache --repository http://dl-3.alpinelinux.org/alpine/edge/testing gnu-libiconv && \
     docker-php-ext-install gd curl ldap mysqli sockets gettext mbstring xml intl opcache && \
     docker-php-ext-configure imap --with-imap-ssl && \
     docker-php-ext-install imap && \
